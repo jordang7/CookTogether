@@ -32,6 +32,7 @@ const RecipeUpload = () => {
 
   let handleSubmit = (e) => {
     e.preventDefault();
+
     //TODO Send information to mint.js to mint the NFT
   };
   const style = {
@@ -56,7 +57,9 @@ const RecipeUpload = () => {
                     type="text"
                     name="Ingredient"
                     value={element.Ingredient || ""}
+                    id="validationCustom03"
                     onChange={(e) => handleChange(index, e)}
+                    required
                   />
                 </InputGroup>
               </Col>
@@ -69,6 +72,7 @@ const RecipeUpload = () => {
                     name="Amount"
                     value={element.Amount || ""}
                     onChange={(e) => handleChange(index, e)}
+                    required
                   />
                 </InputGroup>
               </Col>
