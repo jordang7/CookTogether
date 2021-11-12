@@ -41,67 +41,72 @@ const RecipeUpload = () => {
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
-      {IngredientsArray.map((element, index) => (
-        <div className="form-inline" style={style.IngredientBox} key={index}>
-          <Row className="p-4">
-            <Col>
-              <InputGroup>
-                <FormControl
-                  placeholder="Ingredient"
-                  aria-label="Ingredient"
-                  type="text"
-                  name="Ingredient"
-                  value={element.Ingredient || ""}
-                  onChange={(e) => handleChange(index, e)}
-                />
-              </InputGroup>
-            </Col>
-            <Col>
-              <InputGroup>
-                <FormControl
-                  placeholder="Amount"
-                  aria-label="Amount"
-                  type="text"
-                  name="Amount"
-                  value={element.Amount || ""}
-                  onChange={(e) => handleChange(index, e)}
-                />
-              </InputGroup>
-            </Col>
-          </Row>
-          {index ? (
-            <Button
-              type="button"
-              variant="primary"
-              className="mb-4"
-              onClick={() => removeIngredient(index)}
-            >
-              Remove
-            </Button>
-          ) : null}
+    <div>
+      <h1>Upload your recipe here!</h1>
+      <Form onSubmit={handleSubmit}>
+        {IngredientsArray.map((element, index) => (
+          <div className="form-inline" style={style.IngredientBox} key={index}>
+            <Row className="p-4">
+              <Col md="auto">#{index + 1}</Col>
+              <Col>
+                <InputGroup>
+                  <FormControl
+                    placeholder="Ingredient"
+                    aria-label="Ingredient"
+                    type="text"
+                    name="Ingredient"
+                    value={element.Ingredient || ""}
+                    onChange={(e) => handleChange(index, e)}
+                  />
+                </InputGroup>
+              </Col>
+              <Col>
+                <InputGroup>
+                  <FormControl
+                    placeholder="Amount"
+                    aria-label="Amount"
+                    type="text"
+                    name="Amount"
+                    value={element.Amount || ""}
+                    onChange={(e) => handleChange(index, e)}
+                  />
+                </InputGroup>
+              </Col>
+
+              {index ? (
+                <Col md="auto">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => removeIngredient(index)}
+                  >
+                    Remove
+                  </Button>
+                </Col>
+              ) : null}
+            </Row>
+          </div>
+        ))}
+        <Form.Group controlId="formFile" className="m-3">
+          <Form.Control
+            type="file"
+            onChange={(e) => setPhotoData(e.target.value)}
+          />
+        </Form.Group>
+        <div>
+          <Button
+            className="mx-1"
+            variant="primary"
+            onClick={() => addNewIngredient()}
+          >
+            Add
+          </Button>
+          <Button className="mx-1" variant="primary" type="submit">
+            Submit
+          </Button>
         </div>
-      ))}
-      <Form.Group controlId="formFile" className="mb-3">
-        <Form.Label>Default file input example</Form.Label>
-        <Form.Control
-          type="file"
-          onChange={(e) => setPhotoData(e.target.value)}
-        />
-      </Form.Group>
-      <div className="button-section">
-        <Button
-          className="mx-1"
-          variant="primary"
-          onClick={() => addNewIngredient()}
-        >
-          Add
-        </Button>
-        <Button className="mx-1" variant="primary" type="submit">
-          Submit
-        </Button>
-      </div>
-    </Form>
+      </Form>
+    </div>
   );
 };
 export default RecipeUpload;
