@@ -14,7 +14,7 @@ const RecipeUpload = () => {
     },
   };
   const [IngredientsArray, setIngredientsArray] = useState([
-    { Ingredient: "", Amount: "" },
+    { name: "", quantity: "" },
   ]);
   const [photo, setPhotoData] = useState();
   const [recipeName, setRecipeName] = useState();
@@ -25,7 +25,7 @@ const RecipeUpload = () => {
   };
 
   let addNewIngredient = () => {
-    setIngredientsArray([...IngredientsArray, { Ingredient: "", Amount: "" }]);
+    setIngredientsArray([...IngredientsArray, { name: "", quantity: "" }]);
   };
 
   let removeIngredient = (i) => {
@@ -78,11 +78,11 @@ const RecipeUpload = () => {
               <Col>
                 <InputGroup>
                   <FormControl
-                    placeholder="Ingredient"
-                    aria-label="Ingredient"
+                    placeholder="name"
+                    aria-label="name"
                     type="text"
-                    name="Ingredient"
-                    value={element.Ingredient || ""}
+                    name="name"
+                    value={element.name || ""}
                     id="validationCustom03"
                     onChange={(e) => handleChange(index, e)}
                     required
@@ -92,11 +92,11 @@ const RecipeUpload = () => {
               <Col>
                 <InputGroup>
                   <FormControl
-                    placeholder="Amount"
-                    aria-label="Amount"
+                    placeholder="quantity"
+                    aria-label="quantity"
                     type="text"
-                    name="Amount"
-                    value={element.Amount || ""}
+                    name="quantity"
+                    value={element.quantity || ""}
                     onChange={(e) => handleChange(index, e)}
                     required
                   />
@@ -121,6 +121,7 @@ const RecipeUpload = () => {
           <Form.Control
             type="file"
             onChange={(e) => setPhotoData(e.target.files[0])}
+            required
           />
         </Form.Group>
         <div>
