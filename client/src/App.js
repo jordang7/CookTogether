@@ -1,7 +1,8 @@
 import logo from "./logo.svg";
 import "./App.css";
 import RecipeUpload from "./components/RecipeUpload";
-
+import NFTDashboard from "./components/NFTDashboard";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
@@ -15,16 +16,18 @@ function App() {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
               <Nav.Link href="/Home">Home</Nav.Link>
-              <Nav.Link href="/getBalance">Lookup Balance</Nav.Link>
+              <Nav.Link href="/seeNFTs">See your NFTs</Nav.Link>
               <Nav.Link href="/Transactions">Transactions</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>
-
-      <div className="RecipeUpload">
-        <RecipeUpload />
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RecipeUpload />} />
+          <Route path="/seeNFTs" element={<NFTDashboard />} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

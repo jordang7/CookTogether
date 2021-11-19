@@ -55,22 +55,37 @@ const RecipeUpload = () => {
   };
 
   return (
-    <div>
+    <div className="RecipeUpload">
       <h1>Upload your recipe here!</h1>
       <Form onSubmit={handleSubmit}>
         <Row>
-          <InputGroup>
-            <FormControl
-              placeholder="Recipe Name"
-              aria-label="Recipe Name"
-              type="text"
-              name="Recipe-Name"
-              className="mb-3"
-              onChange={(e) => setRecipeName(e.target.value)}
-              required
-            />
-          </InputGroup>
+          <Col>
+            <label className="primary">Recipe Name</label>
+            <InputGroup>
+              <FormControl
+                placeholder="Recipe Name"
+                aria-label="Recipe Name"
+                type="text"
+                name="Recipe-Name"
+                className="mb-3"
+                onChange={(e) => setRecipeName(e.target.value)}
+                required
+              />
+            </InputGroup>
+          </Col>
+          <Col>
+            <label>Photo</label>
+            <Form.Group controlId="formFile">
+              <Form.Control
+                type="file"
+                onChange={(e) => setPhotoData(e.target.files[0])}
+                className="mb-3"
+                required
+              />
+            </Form.Group>
+          </Col>
         </Row>
+        Ingredients
         {IngredientsArray.map((element, index) => (
           <div className="form-inline" style={style.IngredientBox} key={index}>
             <Row className="p-4">
@@ -107,7 +122,7 @@ const RecipeUpload = () => {
                 <Col md="auto">
                   <Button
                     type="button"
-                    variant="primary"
+                    variant="danger"
                     onClick={() => removeIngredient(index)}
                   >
                     Remove
@@ -117,16 +132,9 @@ const RecipeUpload = () => {
             </Row>
           </div>
         ))}
-        <Form.Group controlId="formFile" className="m-3">
-          <Form.Control
-            type="file"
-            onChange={(e) => setPhotoData(e.target.files[0])}
-            required
-          />
-        </Form.Group>
         <div>
           <Button
-            className="mx-1"
+            className="mx-1 my-2"
             variant="primary"
             onClick={() => addNewIngredient()}
           >
