@@ -15,7 +15,7 @@ function App() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link href="/Home">Home</Nav.Link>
+              <Nav.Link href="/">Recipe Upload</Nav.Link>
               <Nav.Link href="/seeNFTs">See your NFTs</Nav.Link>
               <Nav.Link href="/Transactions">Transactions</Nav.Link>
             </Nav>

@@ -1,6 +1,6 @@
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const existingContractAddr = "0xF9582B7D00E5c8896ddf9D73565993DCf9EC934D";
+const existingContractAddr = "0xF975FdBC4340c6A339f9de4775ae9cA6D9B7b39C";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
