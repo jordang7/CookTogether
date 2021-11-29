@@ -36,7 +36,6 @@ const RecipeUpload = () => {
 
   let handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(photo);
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
