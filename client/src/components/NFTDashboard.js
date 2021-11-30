@@ -1,29 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
-import InputGroup from "react-bootstrap/InputGroup";
-import FormControl from "react-bootstrap/FormControl";
-import Form from "react-bootstrap/Form";
+import Card from "react-bootstrap/Card";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import { ArrowDownCircleFill } from "react-bootstrap-icons";
+import { ArrowUpCircleFill } from "react-bootstrap-icons";
+import { getRecipesByChef } from "../actions/MarketActions";
+
+const axios = require("axios");
+async function getIPFSData(recipeList) {
+  return Promise.all(
+    recipeList.map(async (recipe) => {
+      //console.log(recipe);
+      const res = await axios.get(
+        `https://gateway.ipfs.io/ipfs/${recipe.tokenUri}`
+      );
+      recipe.data = res.data;
+      return recipe;
+    })
+  );
+}
 
 const NFTDashboard = () => {
-  const [address, setUserAddress] = useState("");
+  const [recipes, setChefNfts] = useState("");
+  let card = null;
+  let handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("handlesub");
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const account = accounts[0];
+
+    let recipeList = await getRecipesByChef(account);
+    console.log(recipeList);
+    let comb = await getIPFSData(recipeList);
+    setChefNfts(comb);
+  };
+
+  const createCards = (recipes) => {
+    return (
+      <Row xs={2} md={3} className="g-4">
+        {recipes.map((recipe) => {
+          return (
+            <Col>
+              <Card bg={"info"} style={{ width: "18rem" }}>
+                <Card.Img variant="top" src={recipe.data.image} />
+                <Card.Header>{recipe.data.name}</Card.Header>
+                <Card.Body>
+                  <Card.Text>{recipe.data.description}</Card.Text>
+                  <Button variant="info">
+                    <ArrowUpCircleFill />
+                  </Button>
+                  {Number(recipe.upCount) - Number(recipe.downCount)}
+                  <Button variant="info">
+                    <ArrowDownCircleFill />
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+    );
+  };
+
+  if (recipes.length) {
+    card = createCards(recipes);
+  }
 
   return (
-    <div class="d d-flex align-items-center justify-content-center">
-      <Form>
-        <h5 class="text-center">Input your address to see your NFTs!</h5>
-        <InputGroup className="mb-3">
-          <InputGroup.Text id="basic-addon1">0x</InputGroup.Text>
-          <FormControl
-            placeholder="Address"
-            aria-label="Address"
-            aria-describedby="basic-addon1"
-            onChange={(e) => setUserAddress(e.target.value)}
-          />
-        </InputGroup>
-        <div class="text-center pb-3">
-          <Button variant="primary">Submit</Button>
+    <div className="RecipeUpload">
+      {recipes.length ? (
+        card
+      ) : (
+        <div>
+          <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
+          <div class="text-center mx-2">
+            <Button onClick={handleSubmit} variant="primary">
+              Connect Wallet
+            </Button>
+          </div>
         </div>
-      </Form>
+      )}
     </div>
   );
 };
