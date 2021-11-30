@@ -3,9 +3,24 @@ import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import { ArrowDownCircleFill } from "react-bootstrap-icons";
+import { ArrowUpCircleFill } from "react-bootstrap-icons";
 import { getRecipesByChef } from "../actions/MarketActions";
 
 const axios = require("axios");
+async function getIPFSData(recipeList) {
+  return Promise.all(
+    recipeList.map(async (recipe) => {
+      //console.log(recipe);
+      const res = await axios.get(
+        `https://gateway.ipfs.io/ipfs/${recipe.tokenUri}`
+      );
+      recipe.data = res.data;
+      return recipe;
+    })
+  );
+}
+
 const NFTDashboard = () => {
   const [recipes, setChefNfts] = useState("");
   let card = null;
@@ -18,66 +33,54 @@ const NFTDashboard = () => {
     const account = accounts[0];
 
     let recipeList = await getRecipesByChef(account);
-    for (let recipe in recipeList) {
-      console.log(recipe);
-      const res = await axios.get(
-        "https://gateway.ipfs.io/ipfs/QmdwBbmneCjbz2GoNmWdRF97gW9TxozWhKRrppUNrLimGv"
-      );
-      recipe.image = res.data.image;
-      recipe.attributes = res.data.attributes;
-      recipe.name = res.data.name;
-      recipe.description = res.data.description;
-      return recipe;
-    }
-    setChefNfts(recipeList);
+    console.log(recipeList);
+    let comb = await getIPFSData(recipeList);
+    setChefNfts(comb);
   };
 
-  const createCard = (recipe) => {
-    console.log(recipe);
+  const createCards = (recipes) => {
     return (
-      <Card bg={"info"} style={{ width: "18rem" }}>
-        <Card.Img variant="top" src={recipe.image} />
-        <Card.Body>
-          <Card.Title>{recipe.name}</Card.Title>
-          <Card.Text>{recipe.description}</Card.Text>
-          {recipe.attributes.map((trait) => {
-            return (
-              <Row>
-                <Col>
-                  <Card.Text>Ingredient: {trait.trait_type}</Card.Text>
-                </Col>
-                <Col>
-                  <Card.Text>Amount: {trait.value}</Card.Text>
-                </Col>
-                )
-              </Row>
-            );
-          })}
-          <Button variant="primary pb3">Upvote {recipe.upCount}</Button>
-          <Button variant="primary ml-2">Downvote {recipe.downCount}</Button>
-        </Card.Body>
-      </Card>
+      <Row xs={2} md={3} className="g-4">
+        {recipes.map((recipe) => {
+          return (
+            <Col>
+              <Card bg={"info"} style={{ width: "18rem" }}>
+                <Card.Img variant="top" src={recipe.data.image} />
+                <Card.Header>{recipe.data.name}</Card.Header>
+                <Card.Body>
+                  <Card.Text>{recipe.data.description}</Card.Text>
+                  <Button variant="info">
+                    <ArrowUpCircleFill />
+                  </Button>
+                  {Number(recipe.upCount) - Number(recipe.downCount)}
+                  <Button variant="info">
+                    <ArrowDownCircleFill />
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
     );
   };
 
   if (recipes.length) {
-    card =
-      recipes &&
-      recipes.map((recipe) => {
-        return createCard(recipe);
-      });
+    card = createCards(recipes);
   }
 
   return (
     <div className="RecipeUpload">
-      <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
       {recipes.length ? (
         card
       ) : (
-        <div class="text-center mx-2">
-          <Button onClick={handleSubmit} variant="primary">
-            Connect Wallet
-          </Button>
+        <div>
+          <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
+          <div class="text-center mx-2">
+            <Button onClick={handleSubmit} variant="primary">
+              Connect Wallet
+            </Button>
+          </div>
         </div>
       )}
     </div>
