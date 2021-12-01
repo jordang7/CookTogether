@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "hardhat/console.sol";
 
 contract RecipeNFTMarket is ReentrancyGuard {
     using Counters for Counters.Counter;
@@ -20,30 +21,30 @@ contract RecipeNFTMarket is ReentrancyGuard {
         owner = payable(msg.sender);
     }
 
-    struct Recipe {
+    struct UserRecipe {
         uint256 itemId;
         address nftContract;
         uint256 tokenId;
         address payable chef;
-        uint256 upCount;
-        uint256 downCount;
+        int256 upCount;
+        int256 downCount;
     }
 
-    mapping(address => mapping(uint256 => VoteStates)) voteStates;
+    mapping(uint256 => mapping(address => VoteStates)) voteStates;
 
-    event RecipeCreated(
+    event UserRecipeCreated(
         uint256 itemId,
         address nftContract,
         uint256 tokenId,
         address payable chef,
-        uint256 upCount,
-        uint256 downCount
+        int256 upCount,
+        int256 downCount
     );
     event VoteCast(uint256, address indexed);
 
-    mapping(uint256 => Recipe) private idToRecipe;
+    mapping(uint256 => UserRecipe) private idToUserRecipe;
 
-    function createRecipe(address nftContract, uint256 tokenId)
+    function createUserRecipe(address nftContract, uint256 tokenId)
         public
         payable
         nonReentrant
@@ -51,7 +52,7 @@ contract RecipeNFTMarket is ReentrancyGuard {
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
 
-        idToRecipe[itemId] = Recipe(
+        idToUserRecipe[itemId] = UserRecipe(
             itemId,
             nftContract,
             tokenId,
@@ -60,11 +61,11 @@ contract RecipeNFTMarket is ReentrancyGuard {
             0
         );
 
-        voteStates[msg.sender][itemId] = VoteStates.Up;
+        voteStates[itemId][msg.sender] = VoteStates.Up;
 
         IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
 
-        emit RecipeCreated(
+        emit UserRecipeCreated(
             itemId,
             nftContract,
             tokenId,
@@ -78,51 +79,63 @@ contract RecipeNFTMarket is ReentrancyGuard {
         return _itemIds.current() + 1;
     }
 
-    function getAllRecipes() public view returns (Recipe[] memory) {
+    function getAllUserRecipes() public view returns (UserRecipe[] memory) {
         uint256 totalItemCount = _itemIds.current();
         uint256 curr = 0;
 
-        Recipe[] memory recipes = new Recipe[](totalItemCount);
+        UserRecipe[] memory userRecipes = new UserRecipe[](totalItemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
-            Recipe storage currentItem = idToRecipe[currentId];
-            recipes[curr] = currentItem;
+            UserRecipe storage currentItem = idToUserRecipe[currentId];
+            userRecipes[curr] = currentItem;
             curr++;
         }
-        return recipes;
+        return userRecipes;
     }
 
-    function getRecipesByChef() public view returns (Recipe[] memory) {
+    function getRecipesByUser()
+        public
+        view
+        returns (UserRecipe[] memory, int256)
+    {
         uint256 totalItemCount = _itemIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
+        int256 karma = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToRecipe[i + 1].chef == msg.sender) {
+            if (idToUserRecipe[i + 1].chef == msg.sender) {
                 itemCount++;
             }
         }
 
-        Recipe[] memory recipes = new Recipe[](itemCount);
+        UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToRecipe[i + 1].chef == msg.sender) {
-                Recipe storage currentItem = idToRecipe[i + 1];
-                recipes[currentIndex] = currentItem;
+            if (idToUserRecipe[i + 1].chef == msg.sender) {
+                UserRecipe storage currentItem = idToUserRecipe[i + 1];
+                userRecipes[currentIndex] = currentItem;
+                karma += (currentItem.upCount - currentItem.downCount);
                 currentIndex++;
             }
         }
-        return recipes;
+        return (userRecipes, karma);
     }
 
-    function castVote(uint256 _recipeId, bool _supports) external {
+    function castVote(uint256 _UserRecipeId, bool _supports) external {
         // require(members[msg.sender]);
-        Recipe storage recipe = idToRecipe[_recipeId];
+        console.log("Hello", msg.sender);
+        UserRecipe storage recipe = idToUserRecipe[_UserRecipeId];
 
         // clear out previous vote
-        if (voteStates[msg.sender][_recipeId] == VoteStates.Up) {
+        console.log(
+            voteStates[_UserRecipeId][
+                0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+            ] == VoteStates.Up
+        );
+        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Up) {
             recipe.upCount--;
         }
-        if (voteStates[msg.sender][_recipeId] == VoteStates.Down) {
+        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Down) {
             recipe.downCount--;
         }
 
@@ -135,10 +148,10 @@ contract RecipeNFTMarket is ReentrancyGuard {
 
         // we're tracking whether or not someone has already voted
         // and we're keeping track as well of what they voted
-        voteStates[msg.sender][_recipeId] = _supports
+        voteStates[_UserRecipeId][msg.sender] = _supports
             ? VoteStates.Up
             : VoteStates.Down;
 
-        emit VoteCast(_recipeId, msg.sender);
+        emit VoteCast(_UserRecipeId, msg.sender);
     }
 }

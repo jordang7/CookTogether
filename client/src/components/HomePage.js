@@ -5,10 +5,11 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { ArrowDownCircleFill } from "react-bootstrap-icons";
 import { ArrowUpCircleFill } from "react-bootstrap-icons";
-import { getRecipesByChef, getAllRecipes } from "../actions/MarketActions";
+import { getAllRecipes } from "../actions/MarketActions";
 
 const axios = require("axios");
 async function getIPFSData(recipeList) {
+  console.log(recipeList);
   return Promise.all(
     recipeList.map(async (recipe) => {
       //console.log(recipe);
@@ -21,27 +22,23 @@ async function getIPFSData(recipeList) {
   );
 }
 
-const NFTDashboard = (props) => {
+const HomePage = () => {
   const [recipes, setChefNfts] = useState("");
   let card = null;
-  let handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("handlesub");
-    console.log(props.type);
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    const account = accounts[0];
-    let recipeList;
-    if (props.type == "dashboard") {
-      recipeList = await getRecipesByChef(account);
-    } else if (props.type == "homepage") {
-      recipeList = await getAllRecipes(account);
+  useEffect(() => {
+    async function fetch() {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const account = accounts[0];
+      let recipeList = await getAllRecipes(account);
+      console.log(recipeList);
+      let comb = await getIPFSData(recipeList);
+      setChefNfts(comb);
     }
-    console.log(recipeList);
-    let comb = await getIPFSData(recipeList);
-    setChefNfts(comb);
-  };
+
+    fetch();
+  });
 
   const createCards = (recipes) => {
     return (
@@ -74,22 +71,7 @@ const NFTDashboard = (props) => {
     card = createCards(recipes);
   }
 
-  return (
-    <div className="RecipeUpload">
-      {recipes.length ? (
-        card
-      ) : (
-        <div>
-          <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
-          <div class="text-center mx-2">
-            <Button onClick={handleSubmit} variant="primary">
-              Connect Wallet
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="RecipeUpload">{recipes.length ? card : ""}</div>;
 };
 
-export default NFTDashboard;
+export default HomePage;

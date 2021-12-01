@@ -27,6 +27,13 @@ export const mintRecipeNFT = async (
     await nft.createRecipe(tokenURI, {
       nonce: nonce + 1,
     });
+    await nft.createRecipe(tokenURI, {
+      nonce: nonce + 1,
+    });
+
+    await market
+      .connect(signer)
+      .createRecipe(RecipeContractAddr, (await market.getNextId()).toString());
 
     await market
       .connect(signer)

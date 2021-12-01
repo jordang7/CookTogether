@@ -38,3 +38,36 @@ export const getRecipesByChef = async (account) => {
     return e;
   }
 };
+
+export const getAllRecipes = async (account) => {
+  try {
+    const signer = await provider.getSigner(account);
+    const market = new ethers.Contract(
+      MarketContractAddr,
+      abi.marketAbi,
+      signer
+    );
+    const nft = new ethers.Contract(RecipeContractAddr, abi.recipeAbi, signer);
+
+    let recipes = await market.connect(signer).getRecipesByChef();
+
+    recipes = await Promise.all(
+      recipes.map(async (i) => {
+        const tokenUri = await nft.tokenURI(i.tokenId);
+        let item = {
+          tokenId: i.tokenId.toString(),
+          chef: i.chef,
+          tokenUri,
+          upCount: i.upCount.toString(),
+          downCount: i.downCount.toString(),
+        };
+        return item;
+      })
+    );
+    console.log(recipes);
+    return recipes;
+  } catch (e) {
+    console.log(e);
+    return e;
+  }
+};

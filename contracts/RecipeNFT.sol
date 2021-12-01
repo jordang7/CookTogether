@@ -8,21 +8,20 @@ contract RecipeNFT is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     address contractAddr;
+    address[] private certifiedChefs;
 
     event RecipeCreated(uint256);
 
     constructor(address _addr) ERC721("Recipe", "RCP") {
         contractAddr = _addr;
+        certifiedChefs.push(0x6F234Fa20558743970ccEBD6AF259fCB49eeA73c);
     }
 
-    function createRecipe(string memory tokenURI) public returns (uint256) {
+    function createUserRecipe(string memory _tokenURI) public {
         _tokenIds.increment();
-
         uint256 newItemId = _tokenIds.current();
         _mint(msg.sender, newItemId);
-        _setTokenURI(newItemId, tokenURI);
+        _setTokenURI(newItemId, _tokenURI);
         setApprovalForAll(contractAddr, true);
-
-        return newItemId;
     }
 }
