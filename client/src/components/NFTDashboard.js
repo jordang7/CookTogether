@@ -11,7 +11,6 @@ const axios = require("axios");
 async function getIPFSData(recipeList) {
   return Promise.all(
     recipeList.map(async (recipe) => {
-      //console.log(recipe);
       const res = await axios.get(
         `https://gateway.ipfs.io/ipfs/${recipe.tokenUri}`
       );
@@ -24,23 +23,31 @@ async function getIPFSData(recipeList) {
 const NFTDashboard = (props) => {
   const [recipes, setChefNfts] = useState("");
   let card = null;
-  let handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("handlesub");
-    console.log(props.type);
+  const connectUsersMeta = async () => {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
-    const account = accounts[0];
+    return accounts[0];
+  };
+
+  const fetchData = async (account) => {
     let recipeList;
+    console.log(account);
     if (props.type == "dashboard") {
       recipeList = await getRecipesByChef(account);
     } else if (props.type == "homepage") {
       recipeList = await getAllRecipes(account);
     }
-    console.log(recipeList);
     let comb = await getIPFSData(recipeList);
     setChefNfts(comb);
+  };
+
+  let handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("handlesub");
+    console.log(props.type);
+    let account = await connectUsersMeta();
+    await fetchData(account);
   };
 
   const createCards = (recipes) => {

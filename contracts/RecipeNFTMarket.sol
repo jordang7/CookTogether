@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 contract RecipeNFTMarket is ReentrancyGuard {
     using Counters for Counters.Counter;
@@ -13,6 +12,7 @@ contract RecipeNFTMarket is ReentrancyGuard {
 
     address payable owner;
     enum VoteStates {
+        Absent,
         Up,
         Down
     }
@@ -122,16 +122,9 @@ contract RecipeNFTMarket is ReentrancyGuard {
     }
 
     function castVote(uint256 _UserRecipeId, bool _supports) external {
-        // require(members[msg.sender]);
-        console.log("Hello", msg.sender);
         UserRecipe storage recipe = idToUserRecipe[_UserRecipeId];
 
         // clear out previous vote
-        console.log(
-            voteStates[_UserRecipeId][
-                0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-            ] == VoteStates.Up
-        );
         if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Up) {
             recipe.upCount--;
         }

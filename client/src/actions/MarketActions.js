@@ -1,7 +1,7 @@
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const RecipeContractAddr = "0xa7db3ECF5b87033A202e25Ee25B7e08f435625eD";
-const MarketContractAddr = "0x62e120F8Bce765C63327761c428e1F63170eFaF9";
+const RecipeContractAddr = "0xEA7be4F5Bf17B1DF19D33c90c9Cb11d0a2a14c3f";
+const MarketContractAddr = "0x55bB709a1D2aB9976616eC1279a6dDB299d727df";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -16,10 +16,10 @@ export const getRecipesByChef = async (account) => {
     );
     const nft = new ethers.Contract(RecipeContractAddr, abi.recipeAbi, signer);
 
-    let recipes = await market.connect(signer).getRecipesByChef();
-
+    let [recipes, karma] = await market.connect(signer).getRecipesByUser();
     recipes = await Promise.all(
       recipes.map(async (i) => {
+        console.log(i);
         const tokenUri = await nft.tokenURI(i.tokenId);
         let item = {
           tokenId: i.tokenId.toString(),
@@ -49,7 +49,7 @@ export const getAllRecipes = async (account) => {
     );
     const nft = new ethers.Contract(RecipeContractAddr, abi.recipeAbi, signer);
 
-    let recipes = await market.connect(signer).getRecipesByChef();
+    let recipes = await market.connect(signer).getAllUserRecipes();
 
     recipes = await Promise.all(
       recipes.map(async (i) => {

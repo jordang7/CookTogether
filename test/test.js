@@ -107,12 +107,23 @@ describe("RecipeNFTMarket", function () {
       );
     });
     it("Should make sure you cannot vote on same UserRecipe twice", async function () {
-      await market.connect(signer1).castVote(2, true);
+      let tokenId = 2;
+      await market.connect(signer1).castVote(tokenId, true);
 
       items = await market.getAllUserRecipes();
+      let specificRecipe;
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await nft.tokenURI(i.tokenId);
+          if (i.tokenId.toString() == tokenId) {
+            specificRecipe = {
+              tokenId: i.tokenId.toString(),
+              chef: i.chef,
+              tokenUri,
+              upCount: i.upCount.toString(),
+              downCount: i.downCount.toString(),
+            };
+          }
           let item = {
             tokenId: i.tokenId.toString(),
             chef: i.chef,
@@ -120,17 +131,21 @@ describe("RecipeNFTMarket", function () {
             upCount: i.upCount.toString(),
             downCount: i.downCount.toString(),
           };
+
           return item;
         })
       );
 
       assert(
-        (items[1].downCount == 0) & (items[1].upCount == 1),
+        (specificRecipe.downCount == 0) & (specificRecipe.upCount == 1),
         "Duplicate up"
       );
     });
-    it("Should be able to vote up on a nft you are not owner of", async function () {
-      [items, k] = await market.connect(signer0).getRecipesByUser();
+    it("Should be able to vote down on a nft you are not owner of", async function () {
+      let tokenId = 1;
+
+      await market.connect(signer1).castVote(tokenId, false);
+      [items, karma] = await market.connect(signer0).getRecipesByUser();
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await nft.tokenURI(i.tokenId);
@@ -144,26 +159,11 @@ describe("RecipeNFTMarket", function () {
           return item;
         })
       );
-      console.log(items);
-      await market.connect(signer1).castVote(1, false);
-      [items, k] = await market.connect(signer0).getRecipesByUser();
-      items = await Promise.all(
-        items.map(async (i) => {
-          const tokenUri = await nft.tokenURI(i.tokenId);
-          let item = {
-            tokenId: i.tokenId.toString(),
-            chef: i.chef,
-            tokenUri,
-            upCount: i.upCount.toString(),
-            downCount: i.downCount.toString(),
-          };
-          return item;
-        })
-      );
-      console.log(items);
+
       assert(
-        (items[1].downCount == 1) & (items[1].upCount == 1),
-        "Duplicate up"
+        (items[0].downCount == 1) &
+          (items[0].upCount == 1 && karma.toString() == 0),
+        "NFT doesn't have 1 up and 1 down"
       );
     });
 
@@ -178,17 +178,13 @@ describe("RecipeNFTMarket", function () {
       );
     });
 
-    // 0 - 2 0
-    // 1 - 1 1
-
     it("Make sure total karma is returning correctly after voting", async function () {
-      //await market.connect(signer0).castVote(2, false); // downvotes signer1s recipe to 0
+      await market.connect(signer0).castVote(2, false); // downvotes signer1s recipe to 0
       await market.connect(signer1).castVote(1, true); // upvotes signer0s recipe to 2
 
       [items0, totalKarma0] = await market.connect(signer0).getRecipesByUser();
 
       [items1, totalKarma1] = await market.connect(signer1).getRecipesByUser();
-      // console.log(totalKarma0.toString(), totalKarma1.toString());
       items0 = await Promise.all(
         items0.map(async (i) => {
           const tokenUri = await nft.tokenURI(i.tokenId);
@@ -202,9 +198,8 @@ describe("RecipeNFTMarket", function () {
           return item;
         })
       );
-      console.log(items0);
       assert(
-        totalKarma0.toString() == 0 && totalKarma1.toString() == 2,
+        totalKarma0.toString() == 2 && totalKarma1.toString() == 0,
         "karma for users not correct"
       );
     });

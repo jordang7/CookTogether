@@ -10,7 +10,7 @@ export default async function mintNFT(name, recipe, image, cookAddr) {
   const nonce = await signer0.getTransactionCount();
 
   const tokenURI = gateway;
-  await nft.awardItem(cookAddr, tokenURI, {
+  await nft.createUserRecipe(cookAddr, tokenURI, {
     nonce: nonce + i,
   });
 
