@@ -2,7 +2,6 @@ import logo from "./logo.svg";
 import "./App.css";
 import RecipeUpload from "./components/RecipeUpload";
 import NFTDashboard from "./components/NFTDashboard";
-import HomePage from "./components/HomePage";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
