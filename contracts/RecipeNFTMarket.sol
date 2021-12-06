@@ -96,7 +96,11 @@ contract RecipeNFTMarket is ReentrancyGuard {
     function getRecipesByUser()
         public
         view
-        returns (UserRecipe[] memory, int256)
+        returns (
+            UserRecipe[] memory,
+            bool[] memory,
+            int256
+        )
     {
         uint256 totalItemCount = _itemIds.current();
         uint256 itemCount = 0;
