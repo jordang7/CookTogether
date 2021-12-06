@@ -19,7 +19,6 @@ export const getRecipesByChef = async (account) => {
     let [recipes, karma] = await market.connect(signer).getRecipesByUser();
     recipes = await Promise.all(
       recipes.map(async (i) => {
-        //console.log(i);
         const tokenUri = await nft.tokenURI(i.tokenId);
         let item = {
           tokenId: i.tokenId.toString(),
@@ -64,10 +63,18 @@ export const getAllRecipes = async (account) => {
         return item;
       })
     );
-    console.log(recipes);
     return recipes;
   } catch (e) {
     console.log(e);
     return e;
   }
+};
+
+export const castVote = async (account, recipeId, support) => {
+  const signer = await provider.getSigner(account);
+  const market = new ethers.Contract(MarketContractAddr, abi.marketAbi, signer);
+
+  await market.connect(signer).castVote(recipeId, support);
+
+  return true;
 };

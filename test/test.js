@@ -145,7 +145,7 @@ describe("RecipeNFTMarket", function () {
       let tokenId = 1;
 
       await market.connect(signer1).castVote(tokenId, false);
-      [items, karma] = await market.connect(signer0).getRecipesByUser();
+      [items, votes, karma] = await market.connect(signer0).getRecipesByUser();
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await nft.tokenURI(i.tokenId);
@@ -168,9 +168,13 @@ describe("RecipeNFTMarket", function () {
     });
 
     it("Make sure total karma is returning correctly after NFT creation", async function () {
-      [items, totalKarma] = await market.connect(signer0).getRecipesByUser();
+      [items, votes, totalKarma] = await market
+        .connect(signer0)
+        .getRecipesByUser();
 
-      [items1, totalKarma1] = await market.connect(signer1).getRecipesByUser();
+      [items1, votes, totalKarma1] = await market
+        .connect(signer1)
+        .getRecipesByUser();
 
       assert(
         totalKarma.toString() == 1 && totalKarma1.toString() == 1,
@@ -182,9 +186,19 @@ describe("RecipeNFTMarket", function () {
       await market.connect(signer0).castVote(2, false); // downvotes signer1s recipe to 0
       await market.connect(signer1).castVote(1, true); // upvotes signer0s recipe to 2
 
-      [items0, totalKarma0] = await market.connect(signer0).getRecipesByUser();
+      [items0, votes, totalKarma0] = await market
+        .connect(signer0)
+        .getRecipesByUser();
 
-      [items1, totalKarma1] = await market.connect(signer1).getRecipesByUser();
+      [items1, votes, totalKarma1] = await market
+        .connect(signer1)
+        .getRecipesByUser();
+      votes = await Promise.all(
+        votes.map(async (i) => {
+          console.log("here", i);
+        })
+      );
+
       items0 = await Promise.all(
         items0.map(async (i) => {
           const tokenUri = await nft.tokenURI(i.tokenId);

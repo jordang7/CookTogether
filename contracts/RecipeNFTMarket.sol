@@ -110,15 +110,18 @@ contract RecipeNFTMarket is ReentrancyGuard {
         }
 
         UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
+        bool[] memory votes = new bool[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
             if (idToUserRecipe[i + 1].chef == msg.sender) {
                 UserRecipe storage currentItem = idToUserRecipe[i + 1];
                 userRecipes[currentIndex] = currentItem;
+                votes[currentIndex] =
+                    voteStates[i + 1][msg.sender] == VoteStates.Up;
                 karma += (currentItem.upCount - currentItem.downCount);
                 currentIndex++;
             }
         }
-        return (userRecipes, karma);
+        return (userRecipes, votes, karma);
     }
 
     function castVote(uint256 _UserRecipeId, bool _supports) external {
