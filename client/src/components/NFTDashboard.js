@@ -3,8 +3,7 @@ import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { ArrowDownCircleFill } from "react-bootstrap-icons";
-import { ArrowUpCircleFill } from "react-bootstrap-icons";
+import { ArrowDownCircleFill, ArrowUpCircleFill } from "react-bootstrap-icons";
 import { getRecipesByChef, getAllRecipes } from "../actions/MarketActions";
 
 const axios = require("axios");
@@ -21,34 +20,30 @@ async function getIPFSData(recipeList) {
 }
 
 const NFTDashboard = (props) => {
-  const [recipes, setChefNfts] = useState("");
+  const [recipes, setChefNfts] = useState([]);
+  const [karma, setKarmaValue] = useState([]);
   let card = null;
-  const connectUsersMeta = async () => {
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    return accounts[0];
-  };
 
-  const fetchData = async (account) => {
-    let recipeList;
-    console.log(account);
-    if (props.type == "dashboard") {
-      recipeList = await getRecipesByChef(account);
-    } else if (props.type == "homepage") {
-      recipeList = await getAllRecipes(account);
+  useEffect(() => {
+    async function fetchData() {
+      let recipeList, karma0;
+      //console.log(props.account);
+      if (props.type == "dashboard") {
+        [recipeList, karma0] = await getRecipesByChef(props.account);
+        console.log(recipeList);
+      } else if (props.type == "homepage") {
+        recipeList = await getAllRecipes(props.account);
+      }
+      let comb = await getIPFSData(recipeList);
+      setChefNfts(comb);
+      if (karma0) {
+        setKarmaValue(karma0.toString());
+      }
     }
-    let comb = await getIPFSData(recipeList);
-    setChefNfts(comb);
-  };
-
-  let handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("handlesub");
-    console.log(props.type);
-    let account = await connectUsersMeta();
-    await fetchData(account);
-  };
+    if (props.account) {
+      fetchData();
+    }
+  }, [props.account]);
 
   const createCards = (recipes) => {
     return (
@@ -80,21 +75,19 @@ const NFTDashboard = (props) => {
   if (recipes.length) {
     card = createCards(recipes);
   }
-
   return (
-    <div className="RecipeUpload">
-      {recipes.length ? (
-        card
-      ) : (
-        <div>
-          <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
-          <div class="text-center mx-2">
-            <Button onClick={handleSubmit} variant="primary">
-              Connect Wallet
-            </Button>
+    <div>
+      <div>{karma ? <div>Your Karma count is: {karma}</div> : ""}</div>
+      <div className="RecipeUpload">
+        {recipes.length ? (
+          card
+        ) : (
+          <div>
+            <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
+            <div class="text-center mx-2"></div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

@@ -19,7 +19,7 @@ export const getRecipesByChef = async (account) => {
     let [recipes, karma] = await market.connect(signer).getRecipesByUser();
     recipes = await Promise.all(
       recipes.map(async (i) => {
-        console.log(i);
+        //console.log(i);
         const tokenUri = await nft.tokenURI(i.tokenId);
         let item = {
           tokenId: i.tokenId.toString(),
@@ -31,8 +31,8 @@ export const getRecipesByChef = async (account) => {
         return item;
       })
     );
-    console.log(recipes);
-    return recipes;
+
+    return [recipes, karma];
   } catch (e) {
     console.log(e);
     return e;
