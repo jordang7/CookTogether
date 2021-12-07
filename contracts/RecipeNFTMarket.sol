@@ -1,14 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract RecipeNFTMarket is ReentrancyGuard {
+import "hardhat/console.sol";
+
+contract RecipeNFTMarket is ERC721URIStorage {
     using Counters for Counters.Counter;
-    Counters.Counter private _itemIds;
+    Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
+
+    address[] blackListAddresses;
+
+    uint256 lastRefresh;
 
     address payable owner;
     enum VoteStates {
@@ -17,118 +24,153 @@ contract RecipeNFTMarket is ReentrancyGuard {
         Down
     }
 
-    constructor() {
+    constructor() ERC721("Recipe", "RCP") {
         owner = payable(msg.sender);
+        lastRefresh = block.timestamp;
     }
 
-    struct UserRecipe {
-        uint256 itemId;
-        address nftContract;
+    struct MarketItem {
         uint256 tokenId;
         address payable chef;
         int256 upCount;
         int256 downCount;
+        bool active;
+        bool previousWinner;
+        bool isReward;
     }
 
     mapping(uint256 => mapping(address => VoteStates)) voteStates;
 
-    event UserRecipeCreated(
-        uint256 itemId,
-        address nftContract,
+    event MarketItemCreated(
         uint256 tokenId,
         address payable chef,
         int256 upCount,
-        int256 downCount
+        int256 downCount,
+        bool active,
+        bool previousWinner,
+        bool isReward
     );
+
     event VoteCast(uint256, address indexed);
 
-    mapping(uint256 => UserRecipe) private idToUserRecipe;
+    mapping(uint256 => MarketItem) private idToMarketItem;
+    mapping(address => uint256) private userToUnClaimedRewards;
 
-    function createUserRecipe(address nftContract, uint256 tokenId)
-        public
-        payable
-        nonReentrant
+    function createMarketItem(string memory _tokenURI) external {
+        bool allow = true;
+        for (uint256 i = 0; i < blackListAddresses.length; i++) {
+            if (blackListAddresses[i] == msg.sender) {
+                allow = false;
+            }
+        }
+        require(allow, "Already created your NFT for this week!");
+
+        _tokenIds.increment();
+        uint256 newItemId = _tokenIds.current();
+        _mint(msg.sender, newItemId);
+        _setTokenURI(newItemId, _tokenURI);
+
+        idToMarketItem[newItemId] = MarketItem(
+            newItemId,
+            payable(msg.sender),
+            1,
+            0,
+            true,
+            false,
+            false
+        );
+
+        voteStates[newItemId][msg.sender] = VoteStates.Up;
+
+        emit MarketItemCreated(
+            newItemId,
+            payable(msg.sender),
+            1,
+            0,
+            true,
+            false,
+            false
+        );
+
+        blackListAddresses.push(msg.sender);
+    }
+
+    // function getNextId() public view returns (uint256) {
+    //     return _tokenIds.current() + 1;
+    // }
+
+    function getAllMarketItems(bool _active)
+        external
+        view
+        returns (MarketItem[] memory)
     {
-        _itemIds.increment();
-        uint256 itemId = _itemIds.current();
-
-        idToUserRecipe[itemId] = UserRecipe(
-            itemId,
-            nftContract,
-            tokenId,
-            payable(msg.sender),
-            1,
-            0
-        );
-
-        voteStates[itemId][msg.sender] = VoteStates.Up;
-
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-
-        emit UserRecipeCreated(
-            itemId,
-            nftContract,
-            tokenId,
-            payable(msg.sender),
-            1,
-            0
-        );
-    }
-
-    function getNextId() public view returns (uint256) {
-        return _itemIds.current() + 1;
-    }
-
-    function getAllUserRecipes() public view returns (UserRecipe[] memory) {
-        uint256 totalItemCount = _itemIds.current();
+        uint256 totalItemCount = _tokenIds.current();
+        uint256 itemCount = 0;
         uint256 curr = 0;
 
-        UserRecipe[] memory userRecipes = new UserRecipe[](totalItemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
-            UserRecipe storage currentItem = idToUserRecipe[currentId];
-            userRecipes[curr] = currentItem;
-            curr++;
+            if (
+                idToMarketItem[currentId].active == _active &&
+                !idToMarketItem[currentId].isReward
+            ) {
+                itemCount++;
+            }
         }
-        return userRecipes;
+
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            uint256 currentId = i + 1;
+            if (
+                idToMarketItem[currentId].active == _active &&
+                !idToMarketItem[currentId].isReward
+            ) {
+                MarketItem storage currentItem = idToMarketItem[currentId];
+                marketItems[curr] = currentItem;
+                curr++;
+            }
+        }
+
+        return marketItems;
     }
 
     function getRecipesByUser()
-        public
+        external
         view
-        returns (UserRecipe[] memory, int256)
+        returns (MarketItem[] memory, int256)
     {
-        uint256 totalItemCount = _itemIds.current();
+        uint256 totalItemCount = _tokenIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
         int256 karma = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToUserRecipe[i + 1].chef == msg.sender) {
+            if (idToMarketItem[i + 1].chef == msg.sender) {
                 itemCount++;
             }
         }
 
-        UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToUserRecipe[i + 1].chef == msg.sender) {
-                UserRecipe storage currentItem = idToUserRecipe[i + 1];
-                userRecipes[currentIndex] = currentItem;
+            if (idToMarketItem[i + 1].chef == msg.sender) {
+                MarketItem storage currentItem = idToMarketItem[i + 1];
+                marketItems[currentIndex] = currentItem;
                 karma += (currentItem.upCount - currentItem.downCount);
                 currentIndex++;
             }
         }
-        return (userRecipes, karma);
+        return (marketItems, karma);
     }
 
-    function castVote(uint256 _UserRecipeId, bool _supports) external {
-        UserRecipe storage recipe = idToUserRecipe[_UserRecipeId];
+    function castVote(uint256 _MarketItemId, bool _supports) external {
+        MarketItem storage recipe = idToMarketItem[_MarketItemId];
+        require(recipe.active, "Recipe is no longer active for voting");
 
         // clear out previous vote
-        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Up) {
+        if (voteStates[_MarketItemId][msg.sender] == VoteStates.Up) {
             recipe.upCount--;
         }
-        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Down) {
+        if (voteStates[_MarketItemId][msg.sender] == VoteStates.Down) {
             recipe.downCount--;
         }
 
@@ -141,10 +183,87 @@ contract RecipeNFTMarket is ReentrancyGuard {
 
         // we're tracking whether or not someone has already voted
         // and we're keeping track as well of what they voted
-        voteStates[_UserRecipeId][msg.sender] = _supports
+        voteStates[_MarketItemId][msg.sender] = _supports
             ? VoteStates.Up
             : VoteStates.Down;
 
-        emit VoteCast(_UserRecipeId, msg.sender);
+        emit VoteCast(_MarketItemId, msg.sender);
+    }
+
+    function claimRewardNFT(string memory _tokenURI) external payable {
+        require(userToUnClaimedRewards[msg.sender] > 0, "Cannot claim reward");
+
+        _tokenIds.increment();
+        uint256 newItemId = _tokenIds.current();
+        _mint(msg.sender, newItemId);
+        _setTokenURI(newItemId, _tokenURI);
+
+        idToMarketItem[newItemId] = MarketItem(
+            newItemId,
+            payable(msg.sender),
+            0,
+            0,
+            false,
+            false,
+            true
+        );
+        userToUnClaimedRewards[msg.sender]--;
+    }
+
+    function getAllRewardNFTs() external view returns (MarketItem[] memory) {
+        uint256 totalItemCount = _tokenIds.current();
+        uint256 itemCount = 0;
+        uint256 curr = 0;
+
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            if (idToMarketItem[i + 1].isReward) {
+                itemCount++;
+            }
+        }
+
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            uint256 currentId = i + 1;
+            MarketItem storage currentItem = idToMarketItem[currentId];
+            if (currentItem.isReward) {
+                marketItems[curr] = currentItem;
+                curr++;
+            }
+        }
+
+        return marketItems;
+    }
+
+    function awardUsersAndRefreshBlackList() external {
+        require(
+            owner == msg.sender
+            //  &&
+            //     block.timestamp > (lastRefresh + 1 weeks) &&
+            //     block.timestamp < (lastRefresh + 1 weeks)
+        );
+        uint256 totalItemCount = _tokenIds.current();
+        uint256 curr = 0;
+        uint256 highestIndex = 0;
+        delete blackListAddresses;
+        MarketItem memory highest = idToMarketItem[0];
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            uint256 currentId = i + 1;
+            if (idToMarketItem[currentId].active) {
+                int256 currKarma = (idToMarketItem[currentId].upCount -
+                    idToMarketItem[currentId].downCount);
+                int256 highestKarma = (highest.upCount - highest.downCount);
+                if (currKarma > highestKarma) {
+                    highest = idToMarketItem[currentId];
+                    highestIndex = currentId;
+                }
+                idToMarketItem[currentId].active = false;
+            }
+            curr++;
+        }
+        idToMarketItem[highestIndex].previousWinner = true;
+        //TODO reward the User with the highest rated recipe with something
+        userToUnClaimedRewards[highest.chef]++;
+
+        lastRefresh = block.timestamp;
     }
 }
