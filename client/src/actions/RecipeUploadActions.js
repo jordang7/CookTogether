@@ -1,7 +1,6 @@
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const RecipeContractAddr = "0xEA7be4F5Bf17B1DF19D33c90c9Cb11d0a2a14c3f";
-const MarketContractAddr = "0x55bB709a1D2aB9976616eC1279a6dDB299d727df";
+const MarketContractAddr = "0x55911bD688118bE1e027c69f18c672b3aa66F129";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -16,21 +15,14 @@ export const mintRecipeNFT = async (
     const gateway = await ipfsUpload(recipeName, ingredients, photo);
     const signer = await provider.getSigner(account);
     const nonce = await signer.getTransactionCount();
-    const nft = new ethers.Contract(RecipeContractAddr, abi.recipeAbi, signer);
     const market = new ethers.Contract(
       MarketContractAddr,
       abi.marketAbi,
       signer
     );
     const tokenURI = gateway;
-    console.log(nonce);
-    await nft.createUserRecipe(tokenURI, { nonce: nonce + 1 });
-    await market
-      .connect(signer)
-      .createUserRecipe(
-        RecipeContractAddr,
-        (await market.getNextId()).toString()
-      );
+
+    await market.createUserRecipe(tokenURI, { nonce: nonce + 1 });
     return true;
   } catch (e) {
     console.log(e);
