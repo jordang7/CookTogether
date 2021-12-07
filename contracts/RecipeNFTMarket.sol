@@ -29,7 +29,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
         lastRefresh = block.timestamp;
     }
 
-    struct UserRecipe {
+    struct MarketItem {
         uint256 tokenId;
         address payable chef;
         int256 upCount;
@@ -41,7 +41,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
 
     mapping(uint256 => mapping(address => VoteStates)) voteStates;
 
-    event UserRecipeCreated(
+    event MarketItemCreated(
         uint256 tokenId,
         address payable chef,
         int256 upCount,
@@ -53,10 +53,10 @@ contract RecipeNFTMarket is ERC721URIStorage {
 
     event VoteCast(uint256, address indexed);
 
-    mapping(uint256 => UserRecipe) private idToUserRecipe;
+    mapping(uint256 => MarketItem) private idToMarketItem;
     mapping(address => uint256) private userToUnClaimedRewards;
 
-    function createUserRecipe(string memory _tokenURI) external {
+    function createMarketItem(string memory _tokenURI) external {
         bool allow = true;
         for (uint256 i = 0; i < blackListAddresses.length; i++) {
             if (blackListAddresses[i] == msg.sender) {
@@ -70,7 +70,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, _tokenURI);
 
-        idToUserRecipe[newItemId] = UserRecipe(
+        idToMarketItem[newItemId] = MarketItem(
             newItemId,
             payable(msg.sender),
             1,
@@ -82,7 +82,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
 
         voteStates[newItemId][msg.sender] = VoteStates.Up;
 
-        emit UserRecipeCreated(
+        emit MarketItemCreated(
             newItemId,
             payable(msg.sender),
             1,
@@ -99,10 +99,10 @@ contract RecipeNFTMarket is ERC721URIStorage {
     //     return _tokenIds.current() + 1;
     // }
 
-    function getAllUserRecipes(bool _active)
+    function getAllMarketItems(bool _active)
         external
         view
-        returns (UserRecipe[] memory)
+        returns (MarketItem[] memory)
     {
         uint256 totalItemCount = _tokenIds.current();
         uint256 itemCount = 0;
@@ -111,33 +111,33 @@ contract RecipeNFTMarket is ERC721URIStorage {
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
             if (
-                idToUserRecipe[currentId].active == _active &&
-                !idToUserRecipe[currentId].isReward
+                idToMarketItem[currentId].active == _active &&
+                !idToMarketItem[currentId].isReward
             ) {
                 itemCount++;
             }
         }
 
-        UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
             if (
-                idToUserRecipe[currentId].active == _active &&
-                !idToUserRecipe[currentId].isReward
+                idToMarketItem[currentId].active == _active &&
+                !idToMarketItem[currentId].isReward
             ) {
-                UserRecipe storage currentItem = idToUserRecipe[currentId];
-                userRecipes[curr] = currentItem;
+                MarketItem storage currentItem = idToMarketItem[currentId];
+                marketItems[curr] = currentItem;
                 curr++;
             }
         }
 
-        return userRecipes;
+        return marketItems;
     }
 
     function getRecipesByUser()
         external
         view
-        returns (UserRecipe[] memory, int256)
+        returns (MarketItem[] memory, int256)
     {
         uint256 totalItemCount = _tokenIds.current();
         uint256 itemCount = 0;
@@ -145,32 +145,32 @@ contract RecipeNFTMarket is ERC721URIStorage {
         int256 karma = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToUserRecipe[i + 1].chef == msg.sender) {
+            if (idToMarketItem[i + 1].chef == msg.sender) {
                 itemCount++;
             }
         }
 
-        UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToUserRecipe[i + 1].chef == msg.sender) {
-                UserRecipe storage currentItem = idToUserRecipe[i + 1];
-                userRecipes[currentIndex] = currentItem;
+            if (idToMarketItem[i + 1].chef == msg.sender) {
+                MarketItem storage currentItem = idToMarketItem[i + 1];
+                marketItems[currentIndex] = currentItem;
                 karma += (currentItem.upCount - currentItem.downCount);
                 currentIndex++;
             }
         }
-        return (userRecipes, karma);
+        return (marketItems, karma);
     }
 
-    function castVote(uint256 _UserRecipeId, bool _supports) external {
-        UserRecipe storage recipe = idToUserRecipe[_UserRecipeId];
+    function castVote(uint256 _MarketItemId, bool _supports) external {
+        MarketItem storage recipe = idToMarketItem[_MarketItemId];
         require(recipe.active, "Recipe is no longer active for voting");
 
         // clear out previous vote
-        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Up) {
+        if (voteStates[_MarketItemId][msg.sender] == VoteStates.Up) {
             recipe.upCount--;
         }
-        if (voteStates[_UserRecipeId][msg.sender] == VoteStates.Down) {
+        if (voteStates[_MarketItemId][msg.sender] == VoteStates.Down) {
             recipe.downCount--;
         }
 
@@ -183,11 +183,11 @@ contract RecipeNFTMarket is ERC721URIStorage {
 
         // we're tracking whether or not someone has already voted
         // and we're keeping track as well of what they voted
-        voteStates[_UserRecipeId][msg.sender] = _supports
+        voteStates[_MarketItemId][msg.sender] = _supports
             ? VoteStates.Up
             : VoteStates.Down;
 
-        emit VoteCast(_UserRecipeId, msg.sender);
+        emit VoteCast(_MarketItemId, msg.sender);
     }
 
     function claimRewardNFT(string memory _tokenURI) external payable {
@@ -198,7 +198,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, _tokenURI);
 
-        idToUserRecipe[newItemId] = UserRecipe(
+        idToMarketItem[newItemId] = MarketItem(
             newItemId,
             payable(msg.sender),
             0,
@@ -210,28 +210,28 @@ contract RecipeNFTMarket is ERC721URIStorage {
         userToUnClaimedRewards[msg.sender]--;
     }
 
-    function getAllRewardNFTs() external view returns (UserRecipe[] memory) {
+    function getAllRewardNFTs() external view returns (MarketItem[] memory) {
         uint256 totalItemCount = _tokenIds.current();
         uint256 itemCount = 0;
         uint256 curr = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToUserRecipe[i + 1].isReward) {
+            if (idToMarketItem[i + 1].isReward) {
                 itemCount++;
             }
         }
 
-        UserRecipe[] memory userRecipes = new UserRecipe[](itemCount);
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
-            UserRecipe storage currentItem = idToUserRecipe[currentId];
+            MarketItem storage currentItem = idToMarketItem[currentId];
             if (currentItem.isReward) {
-                userRecipes[curr] = currentItem;
+                marketItems[curr] = currentItem;
                 curr++;
             }
         }
 
-        return userRecipes;
+        return marketItems;
     }
 
     function awardUsersAndRefreshBlackList() external {
@@ -245,22 +245,22 @@ contract RecipeNFTMarket is ERC721URIStorage {
         uint256 curr = 0;
         uint256 highestIndex = 0;
         delete blackListAddresses;
-        UserRecipe memory highest = idToUserRecipe[0];
+        MarketItem memory highest = idToMarketItem[0];
         for (uint256 i = 0; i < totalItemCount; i++) {
             uint256 currentId = i + 1;
-            if (idToUserRecipe[currentId].active) {
-                int256 currKarma = (idToUserRecipe[currentId].upCount -
-                    idToUserRecipe[currentId].downCount);
+            if (idToMarketItem[currentId].active) {
+                int256 currKarma = (idToMarketItem[currentId].upCount -
+                    idToMarketItem[currentId].downCount);
                 int256 highestKarma = (highest.upCount - highest.downCount);
                 if (currKarma > highestKarma) {
-                    highest = idToUserRecipe[currentId];
+                    highest = idToMarketItem[currentId];
                     highestIndex = currentId;
                 }
-                idToUserRecipe[currentId].active = false;
+                idToMarketItem[currentId].active = false;
             }
             curr++;
         }
-        idToUserRecipe[highestIndex].previousWinner = true;
+        idToMarketItem[highestIndex].previousWinner = true;
         //TODO reward the User with the highest rated recipe with something
         userToUnClaimedRewards[highest.chef]++;
 

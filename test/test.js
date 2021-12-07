@@ -19,8 +19,8 @@ describe("RecipeNFTMarket", function () {
   });
 
   it("Should mint an nft", async function () {
-    await market.connect(signer0).createUserRecipe("https://www.TEsting.com");
-    items = await market.getAllUserRecipes(true);
+    await market.connect(signer0).createMarketItem("https://www.TEsting.com");
+    items = await market.getAllMarketItems(true);
     items = await Promise.all(
       items.map(async (i) => {
         const tokenUri = await market.tokenURI(i.tokenId);
@@ -38,19 +38,19 @@ describe("RecipeNFTMarket", function () {
   });
 
   it("Should only let you mint one nft for the week", async function () {
-    await market.connect(signer0).createUserRecipe("https://www.TEsting.com");
+    await market.connect(signer0).createMarketItem("https://www.TEsting.com");
     await expect(
-      market.connect(signer0).createUserRecipe("https://www.shouldntWork.com")
+      market.connect(signer0).createMarketItem("https://www.shouldntWork.com")
     ).to.be.reverted;
   });
 
   it("Should let you refresh black list and create a new recipe if you are owner of contract", async function () {
-    await market.connect(signer0).createUserRecipe("https://www.TEsting.com");
+    await market.connect(signer0).createMarketItem("https://www.TEsting.com");
 
     await market.connect(signer0).awardUsersAndRefreshBlackList();
 
-    await market.connect(signer0).createUserRecipe("https://www.newTest.com");
-    activeRecipes = await market.getAllUserRecipes(true);
+    await market.connect(signer0).createMarketItem("https://www.newTest.com");
+    activeRecipes = await market.getAllMarketItems(true);
     activeRecipes = await Promise.all(
       activeRecipes.map(async (i) => {
         const tokenUri = await market.tokenURI(i.tokenId);
@@ -71,10 +71,10 @@ describe("RecipeNFTMarket", function () {
 
   describe("Award recipes testing", async function () {
     beforeEach(async () => {
-      await market.connect(signer0).createUserRecipe("https://www.TEsting.com");
+      await market.connect(signer0).createMarketItem("https://www.TEsting.com");
       await market
         .connect(signer1)
-        .createUserRecipe("https://www.ShouldBeTheWinner.com");
+        .createMarketItem("https://www.ShouldBeTheWinner.com");
       await market.connect(signer0).castVote(2, true);
 
       await market.connect(signer0).awardUsersAndRefreshBlackList();
@@ -106,7 +106,7 @@ describe("RecipeNFTMarket", function () {
     it("Should still return correct recipe list", async function () {
       await market.connect(signer1).claimRewardNFT("foodreward.com");
 
-      deactivatedRecipes = await market.getAllUserRecipes(false);
+      deactivatedRecipes = await market.getAllMarketItems(false);
       deactivatedRecipes = await Promise.all(
         deactivatedRecipes.map(async (i) => {
           const tokenUri = await market.tokenURI(i.tokenId);
@@ -122,7 +122,7 @@ describe("RecipeNFTMarket", function () {
           return item;
         })
       );
-      activeRecipes = await market.getAllUserRecipes(true);
+      activeRecipes = await market.getAllMarketItems(true);
       activeRecipes = await Promise.all(
         activeRecipes.map(async (i) => {
           const tokenUri = await market.tokenURI(i.tokenId);
@@ -155,15 +155,15 @@ describe("RecipeNFTMarket", function () {
       nftContractAddr = nft.address;
       signer0 = await hre.ethers.getSigner(1);
       signer1 = await hre.ethers.getSigner(2);
-      await market.connect(signer0).createUserRecipe("https://www.TEsting.com");
+      await market.connect(signer0).createMarketItem("https://www.TEsting.com");
       await market
         .connect(signer1)
-        .createUserRecipe("https://www.secondtest.com");
+        .createMarketItem("https://www.secondtest.com");
     });
     it("Should change Signer0 vote on own Recipe to down", async function () {
       await market.connect(signer0).castVote(1, false);
 
-      items = await market.getAllUserRecipes(true);
+      items = await market.getAllMarketItems(true);
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await market.tokenURI(i.tokenId);
@@ -187,7 +187,7 @@ describe("RecipeNFTMarket", function () {
     it("Should not let signer 1 Upvote on his own Recipe twice ", async function () {
       await market.connect(signer1).castVote(2, true);
 
-      items = await market.getAllUserRecipes(true);
+      items = await market.getAllMarketItems(true);
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await market.tokenURI(i.tokenId);
@@ -211,7 +211,7 @@ describe("RecipeNFTMarket", function () {
     it("Should let Signer1 Upvote on Signer0s Recipe ", async function () {
       await market.connect(signer1).castVote(1, true);
 
-      items = await market.getAllUserRecipes(true);
+      items = await market.getAllMarketItems(true);
       items = await Promise.all(
         items.map(async (i) => {
           const tokenUri = await market.tokenURI(i.tokenId);
