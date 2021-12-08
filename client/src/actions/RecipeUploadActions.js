@@ -1,6 +1,6 @@
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const MarketContractAddr = "0x55911bD688118bE1e027c69f18c672b3aa66F129";
+const MarketContractAddr = "0x5501c8Aa8F7E0c4152deDBD93Fe82DaBCdFBA21F";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -22,11 +22,11 @@ export const mintRecipeNFT = async (
     );
     const tokenURI = gateway;
 
-    await market.createUserRecipe(tokenURI, { nonce: nonce + 1 });
+    await market.createMarketItem(tokenURI, { nonce: nonce + 1 });
     return true;
   } catch (e) {
     console.log(e);
-    return e;
+    return false;
   }
 };
 

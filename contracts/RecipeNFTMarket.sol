@@ -141,22 +141,29 @@ contract RecipeNFTMarket is ERC721URIStorage {
     {
         uint256 totalItemCount = _tokenIds.current();
         uint256 itemCount = 0;
-        uint256 currentIndex = 0;
+        uint256 curr = 0;
         int256 karma = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToMarketItem[i + 1].chef == msg.sender) {
+            if (
+                idToMarketItem[i + 1].chef == msg.sender &&
+                !idToMarketItem[i + 1].isReward
+            ) {
                 itemCount++;
             }
         }
 
         MarketItem[] memory marketItems = new MarketItem[](itemCount);
+
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (idToMarketItem[i + 1].chef == msg.sender) {
+            if (
+                idToMarketItem[i + 1].chef == msg.sender &&
+                !idToMarketItem[i + 1].isReward
+            ) {
                 MarketItem storage currentItem = idToMarketItem[i + 1];
-                marketItems[currentIndex] = currentItem;
+                marketItems[curr] = currentItem;
                 karma += (currentItem.upCount - currentItem.downCount);
-                currentIndex++;
+                curr++;
             }
         }
         return (marketItems, karma);

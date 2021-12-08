@@ -1,12 +1,13 @@
 import logo from "./logo.svg";
 import "./App.css";
+
 import RecipeUpload from "./components/RecipeUpload";
 import NFTDashboard from "./components/NFTDashboard";
+import AccountPage from "./components/AccountPage";
+import AdminPanel from "./components/AdminPanel";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Navbar from "react-bootstrap/Navbar";
-import Container from "react-bootstrap/Container";
-import Nav from "react-bootstrap/Nav";
-import Button from "react-bootstrap/Button";
+import { Navbar, Nav, Container, Button } from "react-bootstrap";
+import { LinkContainer } from "react-router-bootstrap";
 import { useState } from "react";
 function App() {
   const [account, setAccountState] = useState("");
@@ -18,47 +19,56 @@ function App() {
   };
   let handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("handlesub");
     let account0 = await connectUsersMeta();
     setAccountState(account0);
   };
-  console.log(account);
+
+  window.ethereum.on("accountsChanged", function (accounts) {
+    setAccountState(accounts[0]);
+  });
   return (
     <div>
-      <Navbar bg="light" expand="lg">
+      <BrowserRouter>
         <Container>
-          <Navbar.Brand href="/">Recipe-Book</Navbar.Brand>
-          <Navbar aria-controls="basic-navbar-nav" />
-
-          <Navbar id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link href="/recipeUpload">Recipe Upload</Nav.Link>
-              <Nav.Link href="/seeNFTs">See your NFTs</Nav.Link>
+          <Navbar bg="light" expand="lg">
+            <Nav className="mr-auto">
+              <LinkContainer className="home-link item" to="/">
+                <Nav.Link>Home</Nav.Link>
+              </LinkContainer>
+              <LinkContainer
+                className="stock-chart-link item"
+                to="/recipeUpload"
+              >
+                <Nav.Link>Recipe Upload</Nav.Link>
+              </LinkContainer>
+              <LinkContainer className="crypto-chart-link item" to="/seeNFTs">
+                <Nav.Link>See your NFTs</Nav.Link>
+              </LinkContainer>
+              <LinkContainer className="crypto-chart-link item" to="/admin">
+                <Nav.Link>Admin Panel</Nav.Link>
+              </LinkContainer>
               {!account ? (
                 <Button onClick={handleSubmit}>Connect Wallet</Button>
               ) : (
-                <Nav.Link>
+                <div>
                   Connected:{account.substring(2, 6)} ...
                   {account.substring(37, 41)}
-                </Nav.Link>
+                </div>
               )}
             </Nav>
           </Navbar>
         </Container>
-      </Navbar>
-      <BrowserRouter>
+
         <Routes>
-          <Route
-            path="/"
-            element={<NFTDashboard type="homepage" account={account} />}
-          />
+          <Route path="/" element={<NFTDashboard account={account} />} />
           <Route
             path="/recipeUpload"
             element={<RecipeUpload account={account} />}
           />
+          <Route path="/seeNFTs" element={<AccountPage account={account} />} />
           <Route
-            path="/seeNFTs"
-            element={<NFTDashboard type="dashboard" account={account} />}
+            path="/adminPanel"
+            element={<AdminPanel account={account} />}
           />
         </Routes>
       </BrowserRouter>

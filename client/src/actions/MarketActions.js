@@ -1,6 +1,7 @@
+
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const MarketContractAddr = "0x55911bD688118bE1e027c69f18c672b3aa66F129";
+const MarketContractAddr = "0x5501c8Aa8F7E0c4152deDBD93Fe82DaBCdFBA21F";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -45,13 +46,12 @@ export const getAllActiveRecipes = async (account) => {
       abi.marketAbi,
       signer
     );
-    const nft = new ethers.Contract(RecipeContractAddr, abi.recipeAbi, signer);
 
-    let recipes = await market.connect(signer).getAllUserRecipes(true);
+    let recipes = await market.connect(signer).getAllMarketItems(true);
 
     recipes = await Promise.all(
       recipes.map(async (i) => {
-        const tokenUri = await nft.tokenURI(i.tokenId);
+        const tokenUri = await market.tokenURI(i.tokenId);
         let item = {
           tokenId: i.tokenId.toString(),
           chef: i.chef,
@@ -67,5 +67,28 @@ export const getAllActiveRecipes = async (account) => {
   } catch (e) {
     console.log(e);
     return e;
+  }
+};
+
+export const castVote = async (tokenId, support, account) => {
+  const signer = await provider.getSigner(account);
+  const market = new ethers.Contract(MarketContractAddr, abi.marketAbi, signer);
+  try {
+    let res = await market.connect(signer).castVote(tokenId, support);
+    console.log(res);
+    return true;
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export const endCompetition = async (account) => {
+  const signer = await provider.getSigner(account);
+  const market = new ethers.Contract(MarketContractAddr, abi.marketAbi, signer);
+  try {
+    let res = await market.connect(signer).awardUsersAndRefreshBlackList();
+    return true;
+  } catch (e) {
+    console.log(e);
   }
 };
