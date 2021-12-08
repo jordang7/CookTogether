@@ -54,7 +54,7 @@ const RecipeUpload = () => {
   };
 
   return (
-    <div className="RecipeUpload">
+    <div className="RecipeUpload center">
       <h1>Upload your recipe here!</h1>
       <Form onSubmit={handleSubmit}>
         <Row>

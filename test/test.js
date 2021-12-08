@@ -103,6 +103,29 @@ describe("RecipeNFTMarket", function () {
       await expect(market.connect(signer1).claimRewardNFT("foodreward.com")).to
         .be.reverted;
     });
+    it("Should return the reward NFT for the user", async function () {
+      await market.connect(signer1).claimRewardNFT("foodreward.com");
+      items = await market.connect(signer1).getAllRewardNFTs();
+      items = await Promise.all(
+        items.map(async (i) => {
+          const tokenUri = await market.tokenURI(i.tokenId);
+          let item = {
+            tokenId: i.tokenId.toString(),
+            chef: i.chef,
+            tokenUri,
+            isReward: i.isReward,
+          };
+          return item;
+        })
+      );
+      assert(items.length == 1 && items[0].isReward);
+    });
+    it("Should get correct unclaimed rewards value for users", async function () {
+      const signer1Reward = await market.connect(signer1).hasRewardAvailable();
+      const signer0Reward = await market.connect(signer0).hasRewardAvailable();
+
+      assert(signer1Reward.toString() == 1 && signer0Reward.toString() == 0);
+    });
     it("Should still return correct recipe list", async function () {
       await market.connect(signer1).claimRewardNFT("foodreward.com");
 

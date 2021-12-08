@@ -3,16 +3,19 @@ import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { ArrowDownCircleFill, ArrowUpCircleFill } from "react-bootstrap-icons";
+import Alert from "react-bootstrap/Alert";
 import {
   getRecipesByChef,
-  getAllActiveRecipes,
-  castVote,
+  hasRewardAvailable,
+  getAllRewardFruit,
 } from "../actions/MarketActions";
+import { claimRewardNFT } from "../actions/RecipeUploadActions";
+import { FruitChoices } from "../fruitPhotos/fruitChoices";
+
 const axios = require("axios");
-async function getIPFSData(recipeList) {
+async function getIPFSData(nftList) {
   return Promise.all(
-    recipeList.map(async (recipe) => {
+    nftList.map(async (recipe) => {
       const res = await axios.get(
         `https://gateway.ipfs.io/ipfs/${recipe.tokenUri}`
       );
@@ -21,38 +24,79 @@ async function getIPFSData(recipeList) {
     })
   );
 }
+async function getIPFSDataReward(nftList) {
+  return Promise.all(
+    nftList.map(async (recipe) => {
+      const res = await axios.get(
+        `https://gateway.ipfs.io/ipfs/${recipe.tokenUri}`
+      );
+      const image = await axios.get(res.data.image);
+      res.data.image = image.data;
+      recipe.data = res.data;
+      return recipe;
+    })
+  );
+}
 
 const AccountPage = (props) => {
-  const [recipes, setChefNfts] = useState("");
+  const [recipes, setRecipesList] = useState("");
   const [karma, setKarmaValue] = useState("");
+  const [fruitList, setFruitList] = useState("");
+  const [rewardCount, setRewardCount] = useState(0);
   const [loading, setLoadingValue] = useState(false);
-  let card = null;
+  let card,
+    rewardCards = null;
   useEffect(() => {
     async function fetchData() {
-      let recipeList, karma0;
-      //console.log(props.account);
+      let recipeList, karma0, fruitArr;
       setLoadingValue(true);
       [recipeList, karma0] = await getRecipesByChef(props.account);
       let comb = await getIPFSData(recipeList);
-      setChefNfts(comb);
+      setRecipesList(comb);
       setLoadingValue(false);
       if (karma0) {
         setKarmaValue(karma0.toString());
       }
+      fruitArr = await getAllRewardFruit(props.account);
+      let fruitArrwithData = await getIPFSDataReward(fruitArr);
+      setFruitList(fruitArrwithData);
+      const rewardCount = await hasRewardAvailable();
+      setRewardCount(rewardCount);
     }
     if (props.account) {
       fetchData();
     }
   }, [props.account]);
 
+  let handleRewardMint = async (e) => {
+    e.preventDefault();
+    let account = null;
+    if (!props.account) {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      account = accounts[0];
+    }
+    account = props.account;
+    let success = await claimRewardNFT(account);
+    if (success) {
+      alert("Minting is complete!");
+    } else {
+      alert("Minting failed");
+    }
+  };
   const createCards = (recipes) => {
     return (
-      <Row xs={2} md={3} className="g-4">
+      <Row xs={2} md={3} className="g-4 ">
         {recipes.map((recipe) => {
           return (
-            <Col key={recipe.tokenId}>
+            <Col>
               <Card bg={"info"} style={{ width: "18rem" }}>
-                <Card.Img variant="top" src={recipe.data.image} />
+                <Card.Img
+                  variant="top"
+                  src={recipe.data.image}
+                  style={{ height: "100" }}
+                />
                 <Card.Header>{recipe.data.name}</Card.Header>
                 <Card.Body>
                   <Card.Text>{recipe.data.description}</Card.Text>
@@ -73,20 +117,48 @@ const AccountPage = (props) => {
   if (recipes.length) {
     card = createCards(recipes);
   }
+  if (fruitList.length) {
+    rewardCards = createCards(fruitList);
+  }
   return (
-    <div>
-      <div>{karma ? <div>Your Karma count is: {karma}</div> : ""}</div>
-      <div className="RecipeUpload">
-        {recipes.length ? (
-          card
-        ) : recipes === "" ? (
-          <div>
-            <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
-          </div>
+    <div className="RecipeUpload">
+      <div>
+        <div>
+          {rewardCount > 0 ? (
+            <div>
+              <Alert key={0} variant={"success"}>
+                Congrats on winning the last contest! You have {rewardCount}{" "}
+                unclaimed {rewardCount == 1 ? "reward" : "rewards"}.
+                <Button
+                  variant="success"
+                  className="float-end"
+                  onClick={handleRewardMint}
+                >
+                  Mint Your Fruit!
+                </Button>
+              </Alert>
+            </div>
+          ) : (
+            ""
+          )}
+        </div>
+        <div className="center">
+          {recipes.length ? (
+            card
+          ) : recipes === "" ? (
+            <div>
+              <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
+            </div>
+          ) : (
+            <div>
+              <h5 class="text-center">No Recipes to display!</h5>
+            </div>
+          )}
+        </div>
+        {fruitList.length ? (
+          <div className="text-center">Rewards! {rewardCards}</div>
         ) : (
-          <div>
-            <h5 class="text-center">No Recipes to display!</h5>
-          </div>
+          ""
         )}
       </div>
     </div>

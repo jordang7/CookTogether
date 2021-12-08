@@ -1,6 +1,8 @@
+import { FruitChoices } from "../fruitPhotos/fruitChoices";
+
 const { create } = require("ipfs-http-client");
 const ipfs = create("https://ipfs.infura.io:5001");
-const MarketContractAddr = "0x5501c8Aa8F7E0c4152deDBD93Fe82DaBCdFBA21F";
+const MarketContractAddr = "0x039f34aaB71530E5F7AfAE2d2be48549AA0eaFC9";
 const { ethers } = require("ethers");
 const abi = require(".././secrets/abi.json");
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -23,6 +25,34 @@ export const mintRecipeNFT = async (
     const tokenURI = gateway;
 
     await market.createMarketItem(tokenURI, { nonce: nonce + 1 });
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+};
+
+const randomizedFruitPicking = async () => {
+  const i = Math.floor(Math.random() * 5);
+  //console.log(FruitChoices[i][1]);
+  return [FruitChoices[i][0], FruitChoices[i][1]];
+};
+
+export const claimRewardNFT = async (account) => {
+  try {
+    const [fruitName, photo] = await randomizedFruitPicking();
+    console.log(photo);
+    const gateway = await ipfsUpload(fruitName, [], photo);
+    const signer = await provider.getSigner(account);
+    const nonce = await signer.getTransactionCount();
+    const market = new ethers.Contract(
+      MarketContractAddr,
+      abi.marketAbi,
+      signer
+    );
+    const tokenURI = gateway;
+
+    await market.claimRewardNFT(tokenURI, { nonce: nonce + 1 });
     return true;
   } catch (e) {
     console.log(e);

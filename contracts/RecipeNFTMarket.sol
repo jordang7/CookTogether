@@ -3,32 +3,28 @@ pragma solidity ^0.8.1;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "hardhat/console.sol";
 
-contract RecipeNFTMarket is ERC721URIStorage {
+contract RecipeNFTMarket is ERC721URIStorage, ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
-    Counters.Counter private _itemsSold;
-
-    address[] blackListAddresses;
-
-    uint256 lastRefresh;
 
     address payable owner;
+    address[] blackListAddresses;
+    uint256 lastRefresh;
+
+    //Voting
     enum VoteStates {
         Absent,
         Up,
         Down
     }
+    mapping(uint256 => mapping(address => VoteStates)) voteStates;
+    event VoteCast(uint256, address indexed);
 
-    constructor() ERC721("Recipe", "RCP") {
-        owner = payable(msg.sender);
-        lastRefresh = block.timestamp;
-    }
-
+    //MarketItems
     struct MarketItem {
         uint256 tokenId;
         address payable chef;
@@ -39,8 +35,6 @@ contract RecipeNFTMarket is ERC721URIStorage {
         bool isReward;
     }
 
-    mapping(uint256 => mapping(address => VoteStates)) voteStates;
-
     event MarketItemCreated(
         uint256 tokenId,
         address payable chef,
@@ -50,11 +44,14 @@ contract RecipeNFTMarket is ERC721URIStorage {
         bool previousWinner,
         bool isReward
     );
-
-    event VoteCast(uint256, address indexed);
-
     mapping(uint256 => MarketItem) private idToMarketItem;
+
     mapping(address => uint256) private userToUnClaimedRewards;
+
+    constructor() ERC721("Recipe", "RCP") {
+        owner = payable(msg.sender);
+        lastRefresh = block.timestamp;
+    }
 
     function createMarketItem(string memory _tokenURI) external {
         bool allow = true;
@@ -80,8 +77,6 @@ contract RecipeNFTMarket is ERC721URIStorage {
             false
         );
 
-        voteStates[newItemId][msg.sender] = VoteStates.Up;
-
         emit MarketItemCreated(
             newItemId,
             payable(msg.sender),
@@ -92,12 +87,11 @@ contract RecipeNFTMarket is ERC721URIStorage {
             false
         );
 
+        //On creation, user is defaulted to UpVoting
+        voteStates[newItemId][msg.sender] = VoteStates.Up;
+
         blackListAddresses.push(msg.sender);
     }
-
-    // function getNextId() public view returns (uint256) {
-    //     return _tokenIds.current() + 1;
-    // }
 
     function getAllMarketItems(bool _active)
         external
@@ -134,7 +128,7 @@ contract RecipeNFTMarket is ERC721URIStorage {
         return marketItems;
     }
 
-    function getRecipesByUser()
+    function getMarketItemsByUser()
         external
         view
         returns (MarketItem[] memory, int256)
@@ -197,6 +191,40 @@ contract RecipeNFTMarket is ERC721URIStorage {
         emit VoteCast(_MarketItemId, msg.sender);
     }
 
+    function awardUsersAndRefreshBlackList() external {
+        require(
+            owner == msg.sender
+            //  &&
+            //     block.timestamp > (lastRefresh + 1 weeks) &&
+            //     block.timestamp < (lastRefresh + 1 weeks)
+        );
+        delete blackListAddresses;
+        uint256 totalItemCount = _tokenIds.current();
+        uint256 curr = 0;
+        uint256 highestIndex = 0;
+
+        MarketItem memory highest = idToMarketItem[0];
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            uint256 currentId = i + 1;
+            if (idToMarketItem[currentId].active) {
+                int256 currKarma = (idToMarketItem[currentId].upCount -
+                    idToMarketItem[currentId].downCount);
+                int256 highestKarma = (highest.upCount - highest.downCount);
+                if (currKarma > highestKarma) {
+                    highest = idToMarketItem[currentId];
+                    highestIndex = currentId;
+                }
+                idToMarketItem[currentId].active = false;
+            }
+            curr++;
+        }
+        idToMarketItem[highestIndex].previousWinner = true;
+        //TODO reward the User with the highest rated recipe with something
+        userToUnClaimedRewards[highest.chef]++;
+
+        lastRefresh = block.timestamp;
+    }
+
     function claimRewardNFT(string memory _tokenURI) external payable {
         require(userToUnClaimedRewards[msg.sender] > 0, "Cannot claim reward");
 
@@ -215,6 +243,49 @@ contract RecipeNFTMarket is ERC721URIStorage {
             true
         );
         userToUnClaimedRewards[msg.sender]--;
+    }
+
+    function hasRewardAvailable() external view returns (uint256) {
+        if (userToUnClaimedRewards[msg.sender] > 0) {
+            return userToUnClaimedRewards[msg.sender];
+        } else {
+            return 0;
+        }
+    }
+
+    function getRewardItemsByUser()
+        external
+        view
+        returns (MarketItem[] memory)
+    {
+        uint256 totalItemCount = _tokenIds.current();
+        uint256 itemCount = 0;
+        uint256 curr = 0;
+        int256 karma = 0;
+
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            if (
+                idToMarketItem[i + 1].chef == msg.sender &&
+                idToMarketItem[i + 1].isReward
+            ) {
+                itemCount++;
+            }
+        }
+
+        MarketItem[] memory marketItems = new MarketItem[](itemCount);
+
+        for (uint256 i = 0; i < totalItemCount; i++) {
+            if (
+                idToMarketItem[i + 1].chef == msg.sender &&
+                idToMarketItem[i + 1].isReward
+            ) {
+                MarketItem storage currentItem = idToMarketItem[i + 1];
+                marketItems[curr] = currentItem;
+                karma += (currentItem.upCount - currentItem.downCount);
+                curr++;
+            }
+        }
+        return marketItems;
     }
 
     function getAllRewardNFTs() external view returns (MarketItem[] memory) {
@@ -239,38 +310,5 @@ contract RecipeNFTMarket is ERC721URIStorage {
         }
 
         return marketItems;
-    }
-
-    function awardUsersAndRefreshBlackList() external {
-        require(
-            owner == msg.sender
-            //  &&
-            //     block.timestamp > (lastRefresh + 1 weeks) &&
-            //     block.timestamp < (lastRefresh + 1 weeks)
-        );
-        uint256 totalItemCount = _tokenIds.current();
-        uint256 curr = 0;
-        uint256 highestIndex = 0;
-        delete blackListAddresses;
-        MarketItem memory highest = idToMarketItem[0];
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            uint256 currentId = i + 1;
-            if (idToMarketItem[currentId].active) {
-                int256 currKarma = (idToMarketItem[currentId].upCount -
-                    idToMarketItem[currentId].downCount);
-                int256 highestKarma = (highest.upCount - highest.downCount);
-                if (currKarma > highestKarma) {
-                    highest = idToMarketItem[currentId];
-                    highestIndex = currentId;
-                }
-                idToMarketItem[currentId].active = false;
-            }
-            curr++;
-        }
-        idToMarketItem[highestIndex].previousWinner = true;
-        //TODO reward the User with the highest rated recipe with something
-        userToUnClaimedRewards[highest.chef]++;
-
-        lastRefresh = block.timestamp;
     }
 }

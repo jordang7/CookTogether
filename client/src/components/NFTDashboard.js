@@ -40,7 +40,6 @@ const NFTDashboard = (props) => {
   useEffect(() => {
     async function fetchData() {
       let recipeList, karma0;
-      //console.log(props.account);
       setLoadingValue(true);
       recipeList = await getAllActiveRecipes(props.account);
 
@@ -79,29 +78,29 @@ const NFTDashboard = (props) => {
       <Row xs={2} md={3} className="g-4">
         {recipes.map((recipe) => {
           return (
-            <Col key={recipe.tokenId}>
-              <Card bg={"info"} style={{ width: "18rem" }}>
-                <Card.Img variant="top" src={recipe.data.image} />
-                <Card.Header>{recipe.data.name}</Card.Header>
-                <Card.Body>
-                  <Card.Text>{recipe.data.description}</Card.Text>
-                  <Button
-                    variant="info"
-                    onClick={(e) => handleVote(e, recipe.tokenId, true)}
-                  >
-                    {upVote ? <ArrowUpCircleFill /> : <ArrowUpCircle />}
-                  </Button>
+            //<Col>
+            <Card bg={"info"} style={{ width: "18rem" }}>
+              <Card.Img variant="top" src={recipe.data.image} />
+              <Card.Header>{recipe.data.name}</Card.Header>
+              <Card.Body>
+                <Card.Text>{recipe.data.description}</Card.Text>
+                <Button
+                  variant="info"
+                  onClick={(e) => handleVote(e, recipe.tokenId, true)}
+                >
+                  {upVote ? <ArrowUpCircleFill /> : <ArrowUpCircle />}
+                </Button>
 
-                  {Number(recipe.upCount) - Number(recipe.downCount)}
-                  <Button
-                    variant="info"
-                    onClick={(e) => handleVote(e, recipe.tokenId, false)}
-                  >
-                    {downVote ? <ArrowDownCircleFill /> : <ArrowDownCircle />}
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
+                {Number(recipe.upCount) - Number(recipe.downCount)}
+                <Button
+                  variant="info"
+                  onClick={(e) => handleVote(e, recipe.tokenId, false)}
+                >
+                  {downVote ? <ArrowDownCircleFill /> : <ArrowDownCircle />}
+                </Button>
+              </Card.Body>
+            </Card>
+            //</Col>
           );
         })}
       </Row>
@@ -114,21 +113,24 @@ const NFTDashboard = (props) => {
   if (recipes.length) {
     card = createCards(recipes);
   }
+  console.log(!recipes.length);
   return (
     <div>
       <div>{karma ? <div>Your Karma count is: {karma}</div> : ""}</div>
       <div className="RecipeUpload">
-        {recipes.length ? (
-          card
-        ) : recipes == "" ? (
-          <div>
-            <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
-          </div>
-        ) : (
-          <div>
-            <h5 class="text-center">No Recipes to display!</h5>
-          </div>
-        )}
+        <div className="center">
+          {recipes.length ? (
+            card
+          ) : recipes === "" ? (
+            <div>
+              <h5 class="text-center">Connect your wallet to see your NFTs!</h5>
+            </div>
+          ) : (
+            <div>
+              <h5 class="text-center">No Recipes to display!</h5>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

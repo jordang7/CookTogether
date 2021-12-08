@@ -41,17 +41,19 @@ function App() {
               >
                 <Nav.Link>Recipe Upload</Nav.Link>
               </LinkContainer>
-              <LinkContainer className="crypto-chart-link item" to="/seeNFTs">
+              <LinkContainer to="/seeNFTs">
                 <Nav.Link>See your NFTs</Nav.Link>
               </LinkContainer>
-              <LinkContainer className="crypto-chart-link item" to="/admin">
+              <LinkContainer to="/adminPanel">
                 <Nav.Link>Admin Panel</Nav.Link>
               </LinkContainer>
+            </Nav>
+            <Nav className="ms-auto">
               {!account ? (
                 <Button onClick={handleSubmit}>Connect Wallet</Button>
               ) : (
                 <div>
-                  Connected:{account.substring(2, 6)} ...
+                  Connected: {account.substring(2, 6)} ...
                   {account.substring(37, 41)}
                 </div>
               )}

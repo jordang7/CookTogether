@@ -12,18 +12,23 @@ const AdminPanel = (props) => {
       console.log(e);
     }
   };
+  console.log(props.account);
   if (props.account == 0x6f234fa20558743970ccebd6af259fcb49eea73c) {
     return (
       <div>
         <div className="RecipeUpload">
-          <Button onClick={endComp}>End Competition</Button>
+          <div className="center">
+            <Button onClick={endComp}>End Competition</Button>
+          </div>
         </div>
       </div>
     );
   } else {
     return (
       <div>
-        <div className="RecipeUpload">You are not authorized to see this</div>
+        <div className="RecipeUpload">
+          <div className="center">You are not authorized to see this</div>
+        </div>
       </div>
     );
   }
