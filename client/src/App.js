@@ -29,37 +29,35 @@ function App() {
   return (
     <div>
       <BrowserRouter>
-        <Container>
-          <Navbar bg="light" expand="lg">
-            <Nav className="mr-auto">
-              <LinkContainer className="home-link item" to="/">
-                <Nav.Link>Home</Nav.Link>
-              </LinkContainer>
-              <LinkContainer
-                className="stock-chart-link item"
-                to="/recipeUpload"
-              >
-                <Nav.Link>Recipe Upload</Nav.Link>
-              </LinkContainer>
-              <LinkContainer to="/seeNFTs">
-                <Nav.Link>See your NFTs</Nav.Link>
-              </LinkContainer>
-              <LinkContainer to="/adminPanel">
-                <Nav.Link>Admin Panel</Nav.Link>
-              </LinkContainer>
-            </Nav>
-            <Nav className="ms-auto">
-              {!account ? (
-                <Button onClick={handleSubmit}>Connect Wallet</Button>
-              ) : (
-                <div>
-                  Connected: {account.substring(2, 6)} ...
-                  {account.substring(37, 41)}
-                </div>
-              )}
-            </Nav>
-          </Navbar>
-        </Container>
+        <Navbar bg="light" expand="lg">
+          <Nav className="mr-auto ps-4">
+            <LinkContainer to="/">
+              <Navbar.Brand>CookTogether</Navbar.Brand>
+            </LinkContainer>
+            <LinkContainer to="/">
+              <Nav.Link>Home</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/recipeUpload">
+              <Nav.Link>Recipe Upload</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/seeNFTs">
+              <Nav.Link>See your NFTs</Nav.Link>
+            </LinkContainer>
+            <LinkContainer to="/adminPanel">
+              <Nav.Link>Admin Panel</Nav.Link>
+            </LinkContainer>
+          </Nav>
+          <Nav className="ms-auto">
+            {!account ? (
+              <Button onClick={handleSubmit}>Connect Wallet</Button>
+            ) : (
+              <div>
+                Connected: {account.substring(2, 6)} ...
+                {account.substring(37, 41)}
+              </div>
+            )}
+          </Nav>
+        </Navbar>
 
         <Routes>
           <Route path="/" element={<NFTDashboard account={account} />} />

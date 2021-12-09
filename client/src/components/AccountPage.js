@@ -4,13 +4,19 @@ import Card from "react-bootstrap/Card";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Alert from "react-bootstrap/Alert";
+import Collapse from "react-bootstrap/Collapse";
 import {
   getRecipesByChef,
   hasRewardAvailable,
   getAllRewardFruit,
 } from "../actions/MarketActions";
 import { claimRewardNFT } from "../actions/RecipeUploadActions";
-import { FruitChoices } from "../fruitPhotos/fruitChoices";
+import {
+  ArrowDownCircleFill,
+  ArrowUpCircleFill,
+  ArrowUpCircle,
+  ArrowDownCircle,
+} from "react-bootstrap-icons";
 
 const axios = require("axios");
 async function getIPFSData(nftList) {
@@ -44,6 +50,8 @@ const AccountPage = (props) => {
   const [fruitList, setFruitList] = useState("");
   const [rewardCount, setRewardCount] = useState(0);
   const [loading, setLoadingValue] = useState(false);
+  const [open, setOpen] = useState(false);
+
   let card,
     rewardCards = null;
   useEffect(() => {
@@ -87,7 +95,7 @@ const AccountPage = (props) => {
   };
   const createCards = (recipes) => {
     return (
-      <Row xs={2} md={3} className="g-4 ">
+      <Row md="auto" className="g-4 p-4">
         {recipes.map((recipe) => {
           return (
             <Col>
@@ -95,14 +103,28 @@ const AccountPage = (props) => {
                 <Card.Img
                   variant="top"
                   src={recipe.data.image}
-                  style={{ height: "100" }}
+                  style={{ height: "300px" }}
                 />
                 <Card.Header>{recipe.data.name}</Card.Header>
                 <Card.Body>
-                  <Card.Text>{recipe.data.description}</Card.Text>
-                  <Button variant="info"></Button>
+                  <Card.Text style={{ fontSize: "20px" }}>
+                    {recipe.data.description}
+                  </Card.Text>
                   {Number(recipe.upCount) - Number(recipe.downCount)}
-                  <Button variant="info"></Button>
+
+                  <Collapse in={open}>
+                    <div id="example-collapse-text">
+                      <ul>
+                        {recipe.data.attributes.map((ingredient) => {
+                          return (
+                            <li style={{ fontSize: "20px" }}>
+                              {ingredient.trait_type} - {ingredient.value}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </Collapse>
                 </Card.Body>
               </Card>
             </Col>
@@ -144,7 +166,26 @@ const AccountPage = (props) => {
         </div>
         <div className="center">
           {recipes.length ? (
-            card
+            <div>
+              {card}
+              {open ? (
+                <Button
+                  onClick={() => setOpen(!open)}
+                  aria-controls="attributes"
+                  aria-expanded={open}
+                >
+                  Collapse
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setOpen(!open)}
+                  aria-controls="attributes"
+                  aria-expanded={open}
+                >
+                  See Attributes
+                </Button>
+              )}
+            </div>
           ) : recipes === "" ? (
             <div>
               <h5 class="text-center">Connect your wallet to see your NFTs!</h5>

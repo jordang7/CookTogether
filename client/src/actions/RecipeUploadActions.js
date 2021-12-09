@@ -10,11 +10,17 @@ const provider = new ethers.providers.Web3Provider(window.ethereum);
 export const mintRecipeNFT = async (
   recipeName,
   ingredients,
+  description,
   photo,
   account
 ) => {
   try {
-    const gateway = await ipfsUpload(recipeName, ingredients, photo);
+    const gateway = await ipfsUpload(
+      recipeName,
+      ingredients,
+      description,
+      photo
+    );
     const signer = await provider.getSigner(account);
     const nonce = await signer.getTransactionCount();
     const market = new ethers.Contract(
@@ -34,7 +40,6 @@ export const mintRecipeNFT = async (
 
 const randomizedFruitPicking = async () => {
   const i = Math.floor(Math.random() * 5);
-  //console.log(FruitChoices[i][1]);
   return [FruitChoices[i][0], FruitChoices[i][1]];
 };
 
@@ -60,7 +65,7 @@ export const claimRewardNFT = async (account) => {
   }
 };
 
-export const ipfsUpload = async (name, recipe, image) => {
+export const ipfsUpload = async (name, recipe, description, image) => {
   let imagePath = await ipfsImageUpload(image);
   console.log(recipe);
   const files = {
@@ -75,7 +80,7 @@ export const ipfsUpload = async (name, recipe, image) => {
       }),
 
       image: imagePath,
-      description: `Recipe for ${name}`,
+      description: description,
     }),
   };
   console.log(files);
