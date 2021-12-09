@@ -18,6 +18,7 @@ const RecipeUpload = () => {
   ]);
   const [photo, setPhotoData] = useState();
   const [recipeName, setRecipeName] = useState();
+  const [description, setDescriptionData] = useState();
   let handleChange = (i, e) => {
     let newIngredientsArray = [...IngredientsArray];
     newIngredientsArray[i][e.target.name] = e.target.value;
@@ -43,18 +44,18 @@ const RecipeUpload = () => {
     let success = await mintRecipeNFT(
       recipeName,
       IngredientsArray,
+      description,
       photo,
       account
     );
     if (success) {
       alert("Minting is complete!");
     } else {
-      alert("Minting failed");
+      alert("Minting failed! You have already created your NFT for this week!");
     }
   };
-
   return (
-    <div className="RecipeUpload">
+    <div className="RecipeUpload center">
       <h1>Upload your recipe here!</h1>
       <Form onSubmit={handleSubmit}>
         <Row>
@@ -82,6 +83,22 @@ const RecipeUpload = () => {
                 required
               />
             </Form.Group>
+          </Col>
+        </Row>
+        <Row className="pb-2">
+          <label md="auto">Description</label>
+          <Col>
+            <InputGroup>
+              <FormControl
+                placeholder="Description"
+                aria-label="Description"
+                type="text"
+                name="Description"
+                id="validationCustom03"
+                onChange={(e) => setDescriptionData(e.target.value)}
+                required
+              />
+            </InputGroup>
           </Col>
         </Row>
         Ingredients
